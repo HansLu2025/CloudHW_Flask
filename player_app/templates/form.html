@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ '新增球員' if mode == 'create' else '編輯球員' }}{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('index') }}" class="btn btn-secondary mb-3">← 回到球員列表</a>
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h3 class="card-title mb-3">{{ '新增球員' if mode == 'create' else '編輯球員' }}</h3>
+
+    <form id="playerForm" class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">球員名稱</label>
+        <input type="text" class="form-control" id="name" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">所屬球隊</label>
+        <input type="text" class="form-control" id="team" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">守備位置</label>
+        <input type="text" class="form-control" id="position" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">打擊率 (如 0.305)</label>
+        <input type="number" step="0.001" min="0" max="1" class="form-control" id="batting_avg" required>
+      </div>
+      <div class="col-12">
+        <label class="form-label">球員簡介</label>
+        <textarea class="form-control" id="bio" rows="4" placeholder="簡短介紹..."></textarea>
+      </div>
+      <div class="col-12">
+        <button class="btn btn-primary" type="submit">{{ '建立' if mode == 'create' else '儲存修改' }}</button>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">取消</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const mode = "{{ mode }}";
+const playerId = {{ player_id|default('null') }};
+
+async function loadIfEdit() {
+  if (mode === 'edit' && playerId) {
+    const res = await fetch(`/api/players/${playerId}`);
+    if (!res.ok) {
+      toast('讀取資料失敗');
+      return;
+    }
+    const p = await res.json();
+    document.getElementById('name').value = p.name;
+    document.getElementById('team').value = p.team;
+    document.getElementById('position').value = p.position;
+    document.getElementById('batting_avg').value = Number(p.batting_avg).toFixed(3);
+    document.getElementById('bio').value = p.bio || '';
+  }
+}
+
+document.getElementById('playerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    name: document.getElementById('name').value.trim(),
+    team: document.getElementById('team').value.trim(),
+    position: document.getElementById('position').value.trim(),
+    batting_avg: document.getElementById('batting_avg').value,
+    bio: document.getElementById('bio').value.trim()
+  };
+
+  let res;
+  if (mode === 'create') {
+    res = await fetch('/api/players', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+  } else {
+    res = await fetch(`/api/players/${playerId}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+  }
+
+  if (res.ok) {
+    toast(mode === 'create' ? '建立成功' : '已儲存修改');
+    window.location.href = '/';
+  } else {
+    const err = await res.json().catch(() => ({}));
+    toast(err.error || '操作失敗');
+  }
+});
+
+loadIfEdit();
+</script>
+{% endblock %}
