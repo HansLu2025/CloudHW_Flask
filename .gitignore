@@ -1,0 +1,12 @@
+# 忽略整個虛擬環境
+CloudHW_Flask/
+
+# Python 暫存檔
+__pycache__/
+*.pyc
+
+# SQLite 資料庫（可選）
+*.db
+
+# 系統檔案
+.DS_Store
